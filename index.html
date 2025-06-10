@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Secure Login & Signup</title>
+<style>
+  /* Reset & base */
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f9ff;
+    margin: 0; padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+  .container {
+    background: white;
+    padding: 30px 40px;
+    margin: 40px 0;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    width: 360px;
+  }
+  h2 {
+    text-align: center;
+    color: #004a99;
+    margin-bottom: 24px;
+    user-select: none;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: #007bff;
+    border-bottom: 3px solid transparent;
+    user-select: none;
+    transition: border-color 0.3s ease;
+  }
+  .tab.active {
+    border-color: #007bff;
+    font-weight: 700;
+  }
+
+  /* Forms */
+  form {
+    display: none;
+    flex-direction: column;
+  }
+  form.active {
+    display: flex;
+  }
+  label {
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #003366;
+  }
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    border: 1.8px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px #a0c4ff;
+  }
+  button {
+    padding: 12px 0;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  /* Messages */
+  .message {
+    margin-top: 8px;
+    font-weight: 600;
+    min-height: 20px;
+    user-select: none;
+  }
+  .message.success {
+    color: #2a9d8f;
+  }
+  .message.error {
+    color: #e63946;
+  }
+
+  /* Custom checkbox */
+  .captcha-container {
+    margin-bottom: 16px;
+  }
+  .custom-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    user-select: none;
+    color: #0056b3;
+  }
+  .custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0; width: 0;
+  }
+  .checkmark {
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border-radius: 4px;
+    margin-right: 8px;
+    box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+    position: relative;
+  }
+  .custom-checkbox:hover input ~ .checkmark {
+    background-color: #ccc;
+  }
+  .custom-checkbox input:checked ~ .checkmark {
+    background-color: #007bff;
+    box-shadow: 0 0 6px #007bff;
+  }
+  .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+  }
+  .custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+  }
+
+  /* CAPTCHA box */
+  #captcha-box {
+    margin-top: 12px;
+  }
+  #captcha-image {
+    width: 150px;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    user-select: none;
+  }
+  #captcha-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1.8px solid #ccc;
+    transition: border-color 0.3s ease;
+  }
+  #captcha-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px #a0c4ff;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Secure Login & Signup</h2>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-login">Login</div>
+    <div class="tab" id="tab-signup">Sign Up</div>
+  </div>
+
+  <!-- Login Form -->
+  <form id="login-form" class="active" autocomplete="off" novalidate>
+    <label for="login-username">Username</label>
+    <input type="text" id="login-username" name="username" required placeholder="Enter username" />
+    
+    <label for="login-password">Password</label>
+    <input type="password" id="login-password" name="password" required placeholder="Enter password" />
+
+    <div class="captcha-container">
+      <label class="custom-checkbox">
+        <input type="checkbox" id="login-not-robot-checkbox" />
+        <span class="checkmark"></span>
+        I'm not a robot
+      </label>
+      <div id="login-captcha-box" style="display:none;">
+        <img id="login-captcha-image" src="" alt="CAPTCHA question" />
+        <input type="text" id="login-captcha-input" autocomplete="off" placeholder="Type the answer here" />
+      </div>
+    </div>
+
+    <button type="submit">Login</button>
+    <div id="login-message" class="message"></div>
+  </form>
+
+  <!-- Signup Form -->
+  <form id="signup-form" autocomplete="off" novalidate>
+    <label for="signup-username">Username</label>
+    <input type="text" id="signup-username" name="username" required placeholder="Choose a username" placeholder="Choose a username" />
+    
+    <label for="signup-password">Password</label>
+    <input type="password" id="signup-password" name="password" required placeholder="Create a strong password" />
+
+    <div class="captcha-container">
+      <label class="custom-checkbox">
+        <input type="checkbox" id="signup-not-robot-checkbox" />
+        <span class="checkmark"></span>
+        I'm not a robot
+      </label>
+      <div id="signup-captcha-box" style="display:none;">
+        <img id="signup-captcha-image" src="" alt="CAPTCHA question" />
+        <input type="text" id="signup-captcha-input" autocomplete="off" placeholder="Type the answer here" />
+      </div>
+    </div>
+
+    <button type="submit">Sign Up</button>
+    <div id="signup-message" class="message"></div>
+  </form>
+</div>
+
+<script>
+  // CAPTCHA images IDs — match these to your backend keys and uploaded images in static folder
+  const captchaIds = ['captcha_1', 'captcha_2', 'captcha_3']; 
+
+  // Utility: pick random captcha id and set image src
+  function setCaptchaImage(formPrefix) {
+    const randomIndex = Math.floor(Math.random() * captchaIds.length);
+    const chosenId = captchaIds[randomIndex];
+    const img = document.getElementById(formPrefix + '-captcha-image');
+    img.src = `/static/captcha/${chosenId}.png`;
+    img.alt = `CAPTCHA ${chosenId}`;
+    return chosenId;
+  }
+
+  // Tabs
+  const tabLogin = document.getElementById('tab-login');
+  const tabSignup = document.getElementById('tab-signup');
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+
+  tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabSignup.classList.remove('active');
+    loginForm.classList.add('active');
+    signupForm.classList.remove('active');
+    clearMessages();
+    resetCaptcha('login');
+  });
+
+  tabSignup.addEventListener('click', () => {
+    tabSignup.classList.add('active');
+    tabLogin.classList.remove('active');
+    signupForm.classList.add('active');
+    loginForm.classList.remove('active');
+    clearMessages();
+    resetCaptcha('signup');
+  });
+
+  function clearMessages() {
+    document.getElementById('login-message').textContent = '';
+    document.getElementById('signup-message').textContent = '';
+    document.getElementById('login-message').className = 'message';
+    document.getElementById('signup-message').className = 'message';
+  }
+
+  // Handle CAPTCHA checkbox toggle & load image
+  function setupCaptchaToggle(formPrefix) {
+    const checkbox = document.getElementById(formPrefix + '-not-robot-checkbox');
+    const captchaBox = document.getElementById(formPrefix + '-captcha-box');
+    const captchaInput = document.getElementById(formPrefix + '-captcha-input');
+    let currentCaptchaId = null;
+
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        captchaBox.style.display = 'block';
+        currentCaptchaId = setCaptchaImage(formPrefix);
+        captchaInput.value = '';
+      } else {
+        captchaBox.style.display = 'none';
+        captchaInput.value = '';
+        currentCaptchaId = null;
+      }
+    });
+
+    return () => currentCaptchaId; // getter for current captcha id
+  }
+
+  // Setup toggles for both forms
+  const getLoginCaptchaId = setupCaptchaToggle('login');
+  const getSignupCaptchaId = setupCaptchaToggle('signup');
+
+  // Validation regex for username (no " ' () / \ _ < > )
+  const usernamePattern = /^[^"'()\/\\_<>]+$/;
+
+  // Generic function to sanitize input client-side (simple check)
+  function isUsernameValid(name) {
+    return usernamePattern.test(name);
+  }
+
+  // Submit handlers
+
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMessages();
+
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    const checkbox = document.getElementById('login-not-robot-checkbox');
+    const captchaAnswer = document.getElementById('login-captcha-input').value.trim();
+    const loginMessage = document.getElementById('login-message');
+    const captchaId = getLoginCaptchaId();
+
+    if (!username || !password) {
+      loginMessage.textContent = 'Please fill all fields.';
+      loginMessage.classList.add('error');
+      return;
+    }
+    if (!isUsernameValid(username)) {
+      loginMessage.textContent = 'Username contains invalid characters.';
+      loginMessage.classList.add('error');
+      return;
+    }
+    if (!checkbox.checked) {
+      loginMessage.textContent = 'Please confirm you are not a robot.';
+      loginMessage.classList.add('error');
+      return;
+    }
+    if (!captchaAnswer) {
+      loginMessage.textContent = 'Please answer the CAPTCHA.';
+      loginMessage.classList.add('error');
+      return;
+    }
+
+    // Hash password + random salt generation handled on backend, you just send raw password here
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          password,
+          captcha_id: captchaId,
+          captcha_answer: captchaAnswer
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        loginMessage.textContent = 'Login successful! Redirecting...';
+        loginMessage.classList.add('success');
+        // Redirect or do other stuff here after delay
+      } else {
+        loginMessage.textContent = data.error || 'Login failed.';
+        loginMessage.classList.add('error');
+        resetCaptcha('login');
+      }
+    } catch (err) {
+      loginMessage.textContent = 'Server error. Try again later.';
+      loginMessage.classList.add('error');
+      resetCaptcha('login');
+    }
+  });
+
+  signupForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    clearMessages();
+
+    const username = document.getElementById('signup-username').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const checkbox = document.getElementById('signup-not-robot-checkbox');
+    const captchaAnswer = document.getElementById('signup-captcha-input').value.trim();
+    const signupMessage = document.getElementById('signup-message');
+    const captchaId = getSignupCaptchaId();
+
+    if (!username || !password) {
+      signupMessage.textContent = 'Please fill all fields.';
+      signupMessage.classList.add('error');
+      return;
+    }
+    if (!isUsernameValid(username)) {
+      signupMessage.textContent = 'Username contains invalid characters.';
+      signupMessage.classList.add('error');
+      return;
+    }
+    if (!checkbox.checked) {
+      signupMessage.textContent = 'Please confirm you are not a robot.';
+      signupMessage.classList.add('error');
+      return;
+    }
+    if (!captchaAnswer) {
+      signupMessage.textContent = 'Please answer the CAPTCHA.';
+      signupMessage.classList.add('error');
+      return;
+    }
+
+    try {
+      const response = await fetch('/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          password,
+          captcha_id: captchaId,
+          captcha_answer: captchaAnswer
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        signupMessage.textContent = 'Signup successful! You can now login.';
+        signupMessage.classList.add('success');
+        // Optionally reset form and switch to login
+        signupForm.reset();
+        resetCaptcha('signup');
+      } else {
+        signupMessage.textContent = data.error || 'Signup failed.';
+        signupMessage.classList.add('error');
+        resetCaptcha('signup');
+      }
+    } catch (err) {
+      signupMessage.textContent = 'Server error. Try again later.';
+      signupMessage.classList.add('error');
+      resetCaptcha('signup');
+    }
+  });
+
+  // Reset CAPTCHA for given form prefix (login/signup)
+  function resetCaptcha(formPrefix) {
+    const checkbox = document.getElementById(formPrefix + '-not-robot-checkbox');
+    const captchaBox = document.getElementById(formPrefix + '-captcha-box');
+    const captchaInput = document.getElementById(formPrefix + '-captcha-input');
+
+    checkbox.checked = false;
+    captchaBox.style.display = 'none';
+    captchaInput.value = '';
+  }
+
+  // Init captcha reset on load
+  resetCaptcha('login');
+  resetCaptcha('signup');
+</script>
+
+</body>
+</html>
