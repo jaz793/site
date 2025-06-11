@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Secure Login & Signup</title>
+<title>Unshackled Login & Signup</title>
 <style>
   /* Reset & base */
   body {
@@ -190,8 +190,13 @@
 </head>
 <body>
 
-<div class="container">
-  <h2>Secure Login & Signup</h2>
+<div  class="container ">
+   <button onclick="location.href='/'" style="margin-bottom: 20px; background-color: transparent; border: none; display: flex; align-items: center; cursor: pointer;">
+  <img src="home.png" alt="Home" style="width: 24px; height: 24px; margin-right: 8px;" />
+  <span style="color: #004a99; font-weight: 600; font-size: 1rem;">Home</span>
+</button>
+  <h2>&copy; Unshackled Login & Signup</h2>
+ 
 
   <div class="tabs">
     <div class="tab active" id="tab-login">Login</div>
@@ -217,6 +222,10 @@
         <input type="text" id="login-captcha-input" autocomplete="off" placeholder="Type the answer here" />
       </div>
     </div>
+    
+    <p style="text-align:right; margin-bottom:12px;">
+  <a href="recover_account.html" style="color:#007bff; font-size:0.9rem; cursor:pointer;">Forgot Password?</a>
+</p>
 
     <button type="submit">Login</button>
     <div id="login-message" class="message"></div>
@@ -229,6 +238,11 @@
     
     <label for="signup-password">Password</label>
     <input type="password" id="signup-password" name="password" required placeholder="Create a strong password" />
+    
+    <small style="color: #888; margin-top: -12px; margin-bottom: 16px;">
+  We recommend that password be 8+ characters, include a number and symbol.
+</small>
+
 
     <div class="captcha-container">
       <label class="custom-checkbox">
@@ -242,26 +256,16 @@
       </div>
     </div>
 
+    <label for="signup-recovery-pin">Recovery PIN </label>
+<input type="text" id="signup-recovery-pin" name="recovery_pin" required maxlength="6" pattern="\d{6}" placeholder="Enter PIN" />
     <button type="submit">Sign Up</button>
     <div id="signup-message" class="message"></div>
   </form>
 </div>
 
 <script>
-  // CAPTCHA images IDs — match these to your backend keys and uploaded images in static folder
-  const captchaIds = ['captcha_1', 'captcha_2', 'captcha_3']; 
-
-  // Utility: pick random captcha id and set image src
-  function setCaptchaImage(formPrefix) {
-    const randomIndex = Math.floor(Math.random() * captchaIds.length);
-    const chosenId = captchaIds[randomIndex];
-    const img = document.getElementById(formPrefix + '-captcha-image');
-    img.src = `/static/captcha/${chosenId}.png`;
-    img.alt = `CAPTCHA ${chosenId}`;
-    return chosenId;
-  }
-
-  // Tabs
+  
+  // Tabs switching logic
   const tabLogin = document.getElementById('tab-login');
   const tabSignup = document.getElementById('tab-signup');
   const loginForm = document.getElementById('login-form');
@@ -292,177 +296,138 @@
     document.getElementById('signup-message').className = 'message';
   }
 
-  // Handle CAPTCHA checkbox toggle & load image
-  function setupCaptchaToggle(formPrefix) {
-    const checkbox = document.getElementById(formPrefix + '-not-robot-checkbox');
-    const captchaBox = document.getElementById(formPrefix + '-captcha-box');
-    const captchaInput = document.getElementById(formPrefix + '-captcha-input');
-    let currentCaptchaId = null;
-
-    checkbox.addEventListener('change', () => {
-      if (checkbox.checked) {
-        captchaBox.style.display = 'block';
-        currentCaptchaId = setCaptchaImage(formPrefix);
-        captchaInput.value = '';
-      } else {
-        captchaBox.style.display = 'none';
-        captchaInput.value = '';
-        currentCaptchaId = null;
-      }
-    });
-
-    return () => currentCaptchaId; // getter for current captcha id
-  }
-
-  // Setup toggles for both forms
-  const getLoginCaptchaId = setupCaptchaToggle('login');
-  const getSignupCaptchaId = setupCaptchaToggle('signup');
-
-  // Validation regex for username (no " ' () / \ _ < > )
   const usernamePattern = /^[^"'()\/\\_<>]+$/;
 
-  // Generic function to sanitize input client-side (simple check)
   function isUsernameValid(name) {
     return usernamePattern.test(name);
   }
 
-  // Submit handlers
+  // CAPTCHA state
+  let currentCaptcha = {
+    login: null,
+    signup: null
+  };
 
-  loginForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    clearMessages();
-
-    const username = document.getElementById('login-username').value.trim();
-    const password = document.getElementById('login-password').value;
-    const checkbox = document.getElementById('login-not-robot-checkbox');
-    const captchaAnswer = document.getElementById('login-captcha-input').value.trim();
-    const loginMessage = document.getElementById('login-message');
-    const captchaId = getLoginCaptchaId();
-
-    if (!username || !password) {
-      loginMessage.textContent = 'Please fill all fields.';
-      loginMessage.classList.add('error');
-      return;
-    }
-    if (!isUsernameValid(username)) {
-      loginMessage.textContent = 'Username contains invalid characters.';
-      loginMessage.classList.add('error');
-      return;
-    }
-    if (!checkbox.checked) {
-      loginMessage.textContent = 'Please confirm you are not a robot.';
-      loginMessage.classList.add('error');
-      return;
-    }
-    if (!captchaAnswer) {
-      loginMessage.textContent = 'Please answer the CAPTCHA.';
-      loginMessage.classList.add('error');
-      return;
-    }
-
-    // Hash password + random salt generation handled on backend, you just send raw password here
+  async function fetchCaptcha(formPrefix) {
     try {
-      const response = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username,
-          password,
-          captcha_id: captchaId,
-          captcha_answer: captchaAnswer
-        })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        loginMessage.textContent = 'Login successful! Redirecting...';
-        loginMessage.classList.add('success');
-        // Redirect or do other stuff here after delay
+      const res = await fetch('/generate_captcha', { method: 'GET' });
+      const data = await res.json();
+      if (res.ok && data && data.image && data.captcha_id) {
+        const img = document.getElementById(`${formPrefix}-captcha-image`);
+        img.src = `data:image/png;base64,${data.image}`;
+        img.alt = `CAPTCHA`;
+        currentCaptcha[formPrefix] = data.captcha_id;
+        document.getElementById(`${formPrefix}-captcha-box`).style.display = 'block';
       } else {
-        loginMessage.textContent = data.error || 'Login failed.';
-        loginMessage.classList.add('error');
-        resetCaptcha('login');
+        throw new Error();
       }
-    } catch (err) {
-      loginMessage.textContent = 'Server error. Try again later.';
-      loginMessage.classList.add('error');
-      resetCaptcha('login');
+    } catch (e) {
+      console.error('Failed to load CAPTCHA');
+      currentCaptcha[formPrefix] = null;
     }
-  });
-
-  signupForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    clearMessages();
-
-    const username = document.getElementById('signup-username').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const checkbox = document.getElementById('signup-not-robot-checkbox');
-    const captchaAnswer = document.getElementById('signup-captcha-input').value.trim();
-    const signupMessage = document.getElementById('signup-message');
-    const captchaId = getSignupCaptchaId();
-
-    if (!username || !password) {
-      signupMessage.textContent = 'Please fill all fields.';
-      signupMessage.classList.add('error');
-      return;
-    }
-    if (!isUsernameValid(username)) {
-      signupMessage.textContent = 'Username contains invalid characters.';
-      signupMessage.classList.add('error');
-      return;
-    }
-    if (!checkbox.checked) {
-      signupMessage.textContent = 'Please confirm you are not a robot.';
-      signupMessage.classList.add('error');
-      return;
-    }
-    if (!captchaAnswer) {
-      signupMessage.textContent = 'Please answer the CAPTCHA.';
-      signupMessage.classList.add('error');
-      return;
-    }
-
-    try {
-      const response = await fetch('/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username,
-          password,
-          captcha_id: captchaId,
-          captcha_answer: captchaAnswer
-        })
-      });
-      const data = await response.json();
-      if (response.ok) {
-        signupMessage.textContent = 'Signup successful! You can now login.';
-        signupMessage.classList.add('success');
-        // Optionally reset form and switch to login
-        signupForm.reset();
-        resetCaptcha('signup');
-      } else {
-        signupMessage.textContent = data.error || 'Signup failed.';
-        signupMessage.classList.add('error');
-        resetCaptcha('signup');
-      }
-    } catch (err) {
-      signupMessage.textContent = 'Server error. Try again later.';
-      signupMessage.classList.add('error');
-      resetCaptcha('signup');
-    }
-  });
-
-  // Reset CAPTCHA for given form prefix (login/signup)
-  function resetCaptcha(formPrefix) {
-    const checkbox = document.getElementById(formPrefix + '-not-robot-checkbox');
-    const captchaBox = document.getElementById(formPrefix + '-captcha-box');
-    const captchaInput = document.getElementById(formPrefix + '-captcha-input');
-
-    checkbox.checked = false;
-    captchaBox.style.display = 'none';
-    captchaInput.value = '';
   }
 
-  // Init captcha reset on load
+  function setupCaptchaToggle(formPrefix) {
+    const checkbox = document.getElementById(`${formPrefix}-not-robot-checkbox`);
+    const captchaInput = document.getElementById(`${formPrefix}-captcha-input`);
+
+    checkbox.addEventListener('change', async () => {
+      if (checkbox.checked) {
+        await fetchCaptcha(formPrefix);
+        captchaInput.value = '';
+      } else {
+        resetCaptcha(formPrefix);
+      }
+    });
+  }
+
+  setupCaptchaToggle('login');
+  setupCaptchaToggle('signup');
+
+  async function handleFormSubmit(e, formPrefix, url) {
+    e.preventDefault();
+    clearMessages();
+
+    const username = document.getElementById(`${formPrefix}-username`).value.trim();
+    const password = document.getElementById(`${formPrefix}-password`).value;
+    const checkbox = document.getElementById(`${formPrefix}-not-robot-checkbox`);
+    const captchaInput = document.getElementById(`${formPrefix}-captcha-input`);
+    const messageDiv = document.getElementById(`${formPrefix}-message`);
+
+    const captchaId = currentCaptcha[formPrefix];
+    const captchaAnswer = captchaInput.value.trim();
+
+    if (!username || !password) {
+      messageDiv.textContent = 'Please fill all fields.';
+      messageDiv.classList.add('error');
+      return;
+    }
+    if (!isUsernameValid(username)) {
+      messageDiv.textContent = 'Username contains invalid characters.';
+      messageDiv.classList.add('error');
+      return;
+    }
+    if (!checkbox.checked || !captchaAnswer) {
+      messageDiv.textContent = 'Please complete the CAPTCHA.';
+      messageDiv.classList.add('error');
+      return;
+    }
+
+    const body = {
+      username,
+      password,
+      captcha_id: captchaId,
+      captcha_answer: captchaAnswer
+    };
+
+    if (formPrefix === 'signup') {
+      const recoveryPin = document.getElementById('signup-recovery-pin').value.trim();
+      if (!/^\d{6}$/.test(recoveryPin)) {
+        messageDiv.textContent = 'Recovery PIN must be 6 digits.';
+        messageDiv.classList.add('error');
+        return;
+      }
+      body.recovery_pin = recoveryPin;
+    }
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        messageDiv.textContent = formPrefix === 'login' ? 'Login successful!' : 'Signup successful!';
+        messageDiv.classList.add('success');
+        if (formPrefix === 'signup') {
+          signupForm.reset();
+          resetCaptcha('signup');
+        }
+      } else {
+        messageDiv.textContent = data.error || 'CAPTCHA failed or invalid input.';
+        messageDiv.classList.add('error');
+        await fetchCaptcha(formPrefix);
+      }
+    } catch (err) {
+      messageDiv.textContent = 'Server error. Please try again.';
+      messageDiv.classList.add('error');
+      await fetchCaptcha(formPrefix);
+    }
+  }
+
+  loginForm.addEventListener('submit', e => handleFormSubmit(e, 'login', '/login'));
+  signupForm.addEventListener('submit', e => handleFormSubmit(e, 'signup', '/signup'));
+
+  function resetCaptcha(formPrefix) {
+    document.getElementById(`${formPrefix}-not-robot-checkbox`).checked = false;
+    document.getElementById(`${formPrefix}-captcha-box`).style.display = 'none';
+    document.getElementById(`${formPrefix}-captcha-input`).value = '';
+    currentCaptcha[formPrefix] = null;
+  }
+
+  // Init reset on load
   resetCaptcha('login');
   resetCaptcha('signup');
 </script>
