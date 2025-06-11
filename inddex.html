@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Unshackled | Break Free</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    /* base styles here — same as before, but adding animation */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid #334155;
+    }
+
+       
+    nav h1 {
+      font-weight: 800;
+      font-size: 1.5rem;
+      color: #38bdf8;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.2rem;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #f1f5f9;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    nav a:hover {
+      color: #38bdf8;
+    }
+
+    .hero {
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .hero h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+    }
+
+    .section {
+      background-color: #1e293b;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 2rem 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #e2e8f0;
+    }
+
+    .section ul {
+      list-style: disc;
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .section p, .section li {
+      color: #cbd5e1;
+    }
+
+    .btn, .btn-secondary {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn {
+      background-color: #38bdf8;
+      color: #0f172a;
+    }
+
+    .btn:hover {
+      background-color: #0ea5e9;
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      border: 2px solid #38bdf8;
+      color: #38bdf8;
+    }
+
+    .btn-secondary:hover {
+      background-color: #1e293b;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      margin-top: 3rem;
+      color: #64748b;
+    }
+
+    .reviews {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .review {
+      background-color: #334155;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+
+    .review h4 {
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #38bdf8;
+    }
+
+    .review p {
+      font-size: 0.95rem;
+      color: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <h1>Unshackled</h1>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/login">Login</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    <!-- Paste this in place of your previous search bar + contact button inside <nav> -->
+
+<div style="position: relative; display: flex; align-items: center; gap: 1rem;">
+  <input 
+    type="search" 
+    id="siteSearch" 
+    placeholder="Search pages..." 
+    autocomplete="off"
+    style="padding: 0.4rem 0.6rem; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-family: 'Inter', sans-serif; width: 200px;"
+  />
+  
+  <ul id="searchDropdown" style="
+    position: absolute;
+    top: 2.6rem;
+    left: 0;
+    background: #1e293b;
+    border-radius: 6px;
+    width: 200px;
+    max-height: 150px;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    display: none;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    z-index: 1000;
+  "></ul>
+
+  <button 
+    id="contactBtn" 
+    style="
+      background-color: #38bdf8; 
+      border: none; 
+      padding: 0.5rem 1rem; 
+      border-radius: 6px; 
+      font-weight: 600; 
+      cursor: pointer;
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;"
+  >
+    Contact
+  </button>
+</div>
+
+<script>
+  const pages = {
+    'home': '/',
+    'login': '/login',
+    'about': '/about',
+    'tools': '/tools',
+    'reviews': '/reviews',
+  };
+
+  const searchInput = document.getElementById('siteSearch');
+  const dropdown = document.getElementById('searchDropdown');
+
+  function filterPages(query) {
+    return Object.keys(pages).filter(page => page.startsWith(query));
+  }
+
+  function showDropdown(items) {
+    dropdown.innerHTML = '';
+    if (items.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    items.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      li.style.padding = '0.4rem 0.8rem';
+      li.style.cursor = 'pointer';
+      li.style.color = '#f8fafc';
+      li.addEventListener('mouseenter', () => li.style.backgroundColor = '#334155');
+      li.addEventListener('mouseleave', () => li.style.backgroundColor = 'transparent');
+      li.addEventListener('click', () => {
+        window.location.href = pages[item];
+      });
+      dropdown.appendChild(li);
+    });
+    dropdown.style.display = 'block';
+  }
+
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim().toLowerCase();
+    if (!query) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    const results = filterPages(query);
+    showDropdown(results);
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const query = searchInput.value.trim().toLowerCase();
+      if (pages[query]) {
+        window.location.href = pages[query];
+      } else {
+        // Show full page 404 error (replace entire body)
+        document.body.innerHTML = `
+          <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif;">
+            <h1 style="font-size: 4rem; margin-bottom: 1rem;">Error 404</h1>
+            <img src="chained_laptop.png" alt="Chained Laptop" style="max-width: 300px; margin-bottom: 1.5rem;">
+            <a href="/" style="color: #38bdf8; font-size: 1.5rem; text-decoration: none; border: 2px solid #38bdf8; padding: 0.5rem 1rem; border-radius: 8px;">Go Back Home</a>
+          </div>
+        `;
+      }
+    }
+  });
+
+  // Hide dropdown if clicked outside
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+
+  // Contact button clipboard code (unchanged)
+  document.getElementById('contactBtn').addEventListener('click', () => {
+    const email = 'your.email@example.com'; // Replace this with your actual email
+    navigator.clipboard.writeText(email).then(() => {
+      alert('Email copied to clipboard!');
+    }).catch(() => {
+      alert('Failed to copy email. Please copy manually: ' + email);
+    });
+  });
+</script>
+
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Welcome to Unshackled</h2>
+      <p>Your digital crowbar for cracking school restrictions.</p>
+      <a href="/login" class="btn">Unlock Full Access</a>
+    </section>
+
+    <section class="section scroll-fade">
+      <h3>🚧 Preview: Top Tips</h3>
+      <ul>
+        <li>🛠 Use online IDEs like Replit to tunnel traffic...</li>
+        <li>🧩 Developer mode lets you sneak in custom extensions...</li>
+        <li>📡 Hotspot DNS switch? Yep, that still works...</li>
+      </ul>
+      <a href="/login" class="btn-secondary">See More</a>
+    </section>
+
+    <section class="section scroll-fade">
+      <h3>📁 Preview: Tools & Proxies</h3>
+      <p>Sample tool: <code>proxybox.repl.co</code> — run lightweight proxies in your browser.</p>
+      <a href="/login" class="btn-secondary">Access All Tools</a>
+    </section>
+
+    <section class="section scroll-fade">
+      <h3>🗣 What Students Are Saying</h3>
+      <div class="reviews">
+        {% for review in reviews %}
+          <div class="review">
+            <h4>{{ review.name }}</h4>
+            <p>{{ review.content }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Unshackled. Educational use only. Don’t get expelled, be smart.</p>
+  </footer>
+
+  <script>
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, {
+      threshold: 0.1
+    });
+
+    document.querySelectorAll('.scroll-fade').forEach(section => {
+      observer.observe(section);
+    });
+    
+    
+  </script>
+  <!-- Transparent Cookie Banner -->
+<div id="cookie-banner" style="display:none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.5); color: white; padding: 15px 20px; text-align: center; font-family: sans-serif; z-index: 1000;">
+  <span>We use cookies to improve your experience. Do you accept?</span>
+  <button id="accept-cookies" style="margin-left: 15px; background: #4caf50; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">Accept</button>
+  <button id="reject-cookies" style="margin-left: 10px; background: #f44336; color: white; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px;">Reject</button>
+</div>
+
+<script>
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = name + '=' + value + '; expires=' + expires + '; path=/; SameSite=Lax';
+  }
+
+  function showBanner() {
+    const banner = document.getElementById('cookie-banner');
+    banner.style.display = 'block';
+  }
+
+  function hideBanner() {
+    const banner = document.getElementById('cookie-banner');
+    banner.style.display = 'none';
+  }
+
+  window.addEventListener('load', () => {
+    const consent = getCookie('cookie_consent');
+    if (!consent) {
+      showBanner();
+    }
+
+    document.getElementById('accept-cookies').addEventListener('click', () => {
+      setCookie('cookie_consent', 'accepted', 365);
+      hideBanner();
+    });
+
+    document.getElementById('reject-cookies').addEventListener('click', () => {
+      setCookie('cookie_consent', 'rejected', 365);
+      hideBanner();
+    });
+  });
+</script>
+
+</body>
+</html>
